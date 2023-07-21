@@ -1,0 +1,91 @@
+<script>
+    document.body = document.createElement("body");
+    document.body.style.overflow = "hidden";
+    document.body.style.margin = 0;
+
+    const canvas = document.createElement("canvas");
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext("2d");
+
+    const width = canvas.width = window.innerWidth;
+    const height = canvas.height = window.innerHeight;
+
+    const random = Math.random;
+    const randomInt = (min, max) => {
+        return Math.floor(random() * (max - min + 1) + min);
+    };
+
+    const colors = [[248, 177, 149], [246, 114, 128], [192, 108, 132], [108, 91, 123], [53, 92, 125]]; // R,G,B
+
+    const findPoint = (x, y, pts) => {
+        let point = null;
+        let distance = Infinity;
+
+        for (let p of pts) {
+            let dist = Math.sqrt((p[0] - x) ** 2  + (p[1] - y) ** 2);
+            if (dist < distance) {
+                point = p;
+                distance = dist;
+            }
+        }
+
+        return [point, distance];
+    };
+
+    const getColor = (point, distance, maxDistance) => {
+        let scale = 1 - Math.min(1, distance / maxDistance);
+
+        return [
+            point[2][0] * scale,
+            point[2][1] * scale,
+            point[2][2] * scale
+        ];
+    };
+
+    const draw = _ => {
+        const area = width * height;
+        const maxDistance = Math.sqrt(area) / 4;
+
+        let points = [];
+        for (let i = 0; i < Math.floor(area / 20000 * 2); i++) {
+            points.push([
+                Math.floor(random() * width),  // x
+                Math.floor(random() * height), // y
+                colors[randomInt(0, colors.length - 1)]
+            ]);
+        }
+
+        let data = [];
+        let pixels = [];
+        let outline = [];
+        for (let i = 0; i < area; i++) {
+            let x = i % width;
+            let y = i / width | 0;
+
+            let nearest = findPoint(x, y, points);
+            let currentPoint = `${nearest[0][0]}${nearest[0][1]}`;
+
+            if ((pixels[i - 1] !== undefined && pixels[i - 1] !== currentPoint) || (pixels[i - width] !== undefined && pixels[i - width] !== currentPoint)) {
+                outline.push([x, y]);
+            }
+
+            pixels.push(currentPoint);
+            data.push(...getColor(nearest[0], nearest[1], maxDistance), 255);
+        }
+
+        ctx.putImageData(new ImageData(new Uint8ClampedArray(data), width, height), 0, 0);
+
+        ctx.fillStyle = "#000";
+        for (let i = 0; i < outline.length; i++) {
+            ctx.fillRect(outline[i][0], outline[i][1], 7, 7);
+        }
+        ctx.fill();
+
+        ctx.lineWidth = 14;
+        ctx.strokeStyle = "#000";
+        ctx.strokeRect(0, 0, width, height);
+    };
+
+    draw();
+</script>
